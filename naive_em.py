@@ -101,6 +101,6 @@ def run(X: np.ndarray, mixture: GaussianMixture,
     while (prev_ll is None or ll - prev_ll > 1e-6 * np.abs(ll)):
         prev_ll = ll
         post, ll = estep(X, mixture)
-        mixture = mstep(X, post, mixture)
+        mixture = mstep(X, post)
 
     return mixture, post, ll
