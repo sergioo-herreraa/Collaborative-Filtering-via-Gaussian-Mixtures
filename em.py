@@ -3,7 +3,29 @@ from typing import Tuple
 import numpy as np
 from scipy.special import logsumexp
 from common import GaussianMixture
+from scipy.stats import multivariate_normal
 
+def observed_values_Cu(X, u, j, mixture):
+    x = X[u, :]                        
+    mask = x != 0
+    Cu = np.where(mask, 1, 0)
+
+    x_cu = x[mask]
+    size = len(x_cu)                   
+    miu_cu = mixture.mu[j, mask]     
+    var_cu = mixture.var[j]*np.identity(size, size) 
+
+    return Cu, x_cu, miu_cu, var_cu
+
+def f_u_j(X, u, j, mixture):
+  Cu, x_cu, miu_cu, var_cu = observed_values_Cu(X, u, j, mixture)
+  gaussian = multivariate_normal.pdf(x_cu, miu_cu, var_cu)
+  return np.log(mixture.p[j])+np.log(gaussian)
+
+def log_pj_given_u(X, u, j, mixture):
+  K = len(mixture.var)
+  sum_exp = np.sum([np.exp(f_u_j(X, u, i, mixture)) for i in range(K)])
+  return f_u_j(X, u, j, mixture)-np.log(sum_exp)
 
 def estep(X: np.ndarray, mixture: GaussianMixture) -> Tuple[np.ndarray, float]:
     """E-step: Softly assigns each datapoint to a gaussian component
@@ -18,9 +40,21 @@ def estep(X: np.ndarray, mixture: GaussianMixture) -> Tuple[np.ndarray, float]:
         float: log-likelihood of the assignment
 
     """
-    raise NotImplementedError
+    n, d = X.shape
+    K = len(mixture.var)
+    p = mixture.p
+    log_likelihood_n=0
 
+    for u in range(n):
+        log_likelihood_k= 0
+        for j in range(K):
+            p[u, j] = log_pj_given_u(X, u, j, mixture)
+            log_likelihood_k += f_u_j(X, u, j, mixture)
 
+        log_likelihood_n += log_likelihood_k
+
+    return np.exp(p), log_likelihood_n
+    
 
 def mstep(X: np.ndarray, post: np.ndarray, mixture: GaussianMixture,
           min_variance: float = .25) -> GaussianMixture:
@@ -36,10 +70,40 @@ def mstep(X: np.ndarray, post: np.ndarray, mixture: GaussianMixture,
 
     Returns:
         GaussianMixture: the new gaussian mixture
-    """
-    raise NotImplementedError
+    """ 
+    n, d = X.shape
+    K = len(mixture.var)
+    miu= mixture.mu
+    var = mixture.var
+    p = mixture.p
 
+    for k in range(K):
+      for l in range(d):
+        num_mu = 0
+        denom_mu= 0
+        num_var = 0
+        denom_var = 0
+        p = 0
+        for u in range(n):
+          Cu, x_cu, miu_cu, var_cu = observed_values_Cu(X, u, k, mixture)
+          num_mu += post[u, k]*Cu[l]*X[u,l]
+          denom_mu += post[u, k]*Cu[l]
+          num_var += post[u, k]*np.abs(np.linalg.norm(x_cu-miu_cu))**2
+          denom_var += post[u, k]*len(Cu)
+          p+=post[u, k]
+        if denom_mu >= 1:
+          miu[k, l] = num_mu/denom_mu
+        
+        var[k] = max(num_var/denom_var, min_variance)
 
+        if var[k] < min_variance:
+          var[k] = min_variance
+
+        p[k] = p/n
+
+    return GaussianMixture(miu, var, p)
+    
+          
 def run(X: np.ndarray, mixture: GaussianMixture,
         post: np.ndarray) -> Tuple[GaussianMixture, np.ndarray, float]:
     """Runs the mixture model
@@ -55,7 +119,16 @@ def run(X: np.ndarray, mixture: GaussianMixture,
             for all components for all examples
         float: log-likelihood of the current assignment
     """
-    raise NotImplementedError
+    old_log_likelihood= None
+    log_likelihood= None
+
+    while (log_likelihood is None or log_likelihood - old_log_likelihood > 1e-6*abs(log_likelihood)):
+      old_log_likelihood = log_likelihood
+      post, log_likelihood = estep(X, mixture)
+      mixture = mstep(X, post, mixture)
+
+    return mixture, post, log_likelihood
+
 
 
 def fill_matrix(X: np.ndarray, mixture: GaussianMixture) -> np.ndarray:
