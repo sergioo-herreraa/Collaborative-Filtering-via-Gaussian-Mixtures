@@ -13,7 +13,7 @@ def observed_values_Cu(X, u, j, mixture):
     x_cu = x[mask]
     size = len(x_cu)                   
     miu_cu = mixture.mu[j, mask]     
-    var_cu = mixture.var[j]*np.identity(size, size) 
+    var_cu = mixture.var[j]*np.identity((size, size)) 
 
     return Cu, x_cu, miu_cu, var_cu
 
