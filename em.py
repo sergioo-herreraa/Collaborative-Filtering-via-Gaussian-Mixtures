@@ -119,7 +119,7 @@ def run(X: np.ndarray, mixture: GaussianMixture) -> Tuple[GaussianMixture, np.nd
     old_log_likelihood= None
     log_likelihood= None
 
-    while (log_likelihood is None or log_likelihood - old_log_likelihood > 1e-6*abs(log_likelihood)):
+    while (old_log_likelihood is None or log_likelihood - old_log_likelihood > 1e-6*np.abs(log_likelihood)):
       old_log_likelihood = log_likelihood
       post, log_likelihood = estep(X, mixture)
       mixture = mstep(X, post, mixture)
