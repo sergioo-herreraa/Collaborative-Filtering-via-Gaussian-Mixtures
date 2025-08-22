@@ -140,6 +140,7 @@ def fill_matrix(X: np.ndarray, mixture: GaussianMixture, K, seed) -> np.ndarray:
     """
     mixture, post = common.init(X, K, seed)
     mixture, post, log_likelihood = run(X, mixture)
+    n, d = X.shape
     
     for u in range(n):
         for l in range(d):
