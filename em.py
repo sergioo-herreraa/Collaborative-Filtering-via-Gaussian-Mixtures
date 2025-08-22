@@ -96,16 +96,12 @@ def mstep(X: np.ndarray, post: np.ndarray, mixture: GaussianMixture,
         
         var[k] = max(num_var/denom_var, min_variance)
 
-        if var[k] < min_variance:
-          var[k] = min_variance
-
         p[k] = p/n
 
     return GaussianMixture(miu, var, p)
     
           
-def run(X: np.ndarray, mixture: GaussianMixture,
-        post: np.ndarray) -> Tuple[GaussianMixture, np.ndarray, float]:
+def run(X: np.ndarray, mixture: GaussianMixture) -> Tuple[GaussianMixture, np.ndarray, float]:
     """Runs the mixture model
 
     Args:
@@ -131,7 +127,7 @@ def run(X: np.ndarray, mixture: GaussianMixture,
 
 
 
-def fill_matrix(X: np.ndarray, mixture: GaussianMixture) -> np.ndarray:
+def fill_matrix(X: np.ndarray, mixture: GaussianMixture, K, seed) -> np.ndarray:
     """Fills an incomplete matrix according to a mixture model
 
     Args:
@@ -141,4 +137,12 @@ def fill_matrix(X: np.ndarray, mixture: GaussianMixture) -> np.ndarray:
     Returns
         np.ndarray: a (n, d) array with completed data
     """
-    raise NotImplementedError
+    mixture, post = common.init(X, K, seed)
+    mixture, post, log_likelihood = run(X, mixture)
+    
+    for u in range(n):
+        for l in range(d):
+            if X[u, l]==0:
+                k=np.argmax(post[u, :])
+                X[u, l]=mixture.mu[k, l]
+    return X
