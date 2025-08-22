@@ -117,3 +117,29 @@ def run(X: np.ndarray, mixture: GaussianMixture,
         mixture = mstep(X, post, mixture)
 
     return mixture, post, ll
+
+def fill_matrix(X: np.ndarray, mixture: GaussianMixture) -> np.ndarray:
+    """Fills an incomplete matrix according to a mixture model
+
+    Args:
+        X: (n, d) array of incomplete data (incomplete entries =0)
+        mixture: a mixture of gaussians
+
+    Returns
+        np.ndarray: a (n, d) array with completed data
+    """
+    n, d = X.shape
+    X_pred = X.copy()
+    K, _ = mixture.mu.shape
+
+    for i in range(n):
+        mask = X[i, :] != 0
+        mask0 = X[i, :] == 0
+        post = np.zeros(K)
+        for j in range(K):
+            log_likelihood = log_gaussian(X[i, mask], mixture.mu[j, mask],
+                                          mixture.var[j])
+            post[j] = np.log(mixture.p[j]) + log_likelihood
+        post = np.exp(post - logsumexp(post))
+        X_pred[i, mask0] = np.dot(post, mixture.mu[:, mask0])
+    return X_pred
