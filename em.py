@@ -78,24 +78,24 @@ def mstep(X: np.ndarray, post: np.ndarray, mixture: GaussianMixture,
     p = mixture.p
 
     for k in range(K):
-      for l in range(d):
-        num_mu = 0
-        denom_mu= 0
-        num_var = 0
-        denom_var = 0
-        p_index = 0
-        for u in range(n):
-          Cu, x_cu, miu_cu, var_cu = observed_values_Cu(X, u, k, mixture)
-          num_mu += post[u, k]*Cu[l]*X[u,l]
-          denom_mu += post[u, k]*Cu[l]
-          num_var += post[u, k]*np.abs(np.linalg.norm(x_cu-miu_cu))**2
-          denom_var += post[u, k]*len(x_cu)
-          p_index+=post[u, k]
+        for l in range(d):
+            num_mu = 0
+            denom_mu= 0
+            num_var = 0
+            denom_var = 0
+            p_index = 0
+            for u in range(n):
+              Cu, x_cu, miu_cu, var_cu = observed_values_Cu(X, u, k, mixture)
+              num_mu += post[u, k]*Cu[l]*X[u,l]
+              denom_mu += post[u, k]*Cu[l]
+              num_var += post[u, k]*np.abs(np.linalg.norm(x_cu-miu_cu))**2
+              denom_var += post[u, k]*len(x_cu)
+              p_index+=post[u, k]
 
-        if denom_mu >=1:
-            miu[k,l] = num_mu/denom_mu
+            if denom_mu >=1:
+                miu[k,l] = num_mu/denom_mu
           
-        var[k] = max(num_var/denom_var, min_variance)
+        var[k] = max(num_var/denom_var, 0.25)
 
         p[k] = p_index/n
 
