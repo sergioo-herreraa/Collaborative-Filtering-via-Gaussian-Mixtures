@@ -42,7 +42,7 @@ def estep(X: np.ndarray, mixture: GaussianMixture) -> Tuple[np.ndarray, float]:
     """
     n, d = X.shape
     K = len(mixture.var)
-    p = mixture.p
+    p = np.zeros((n, K))
     log_likelihood_n=0
 
     for u in range(n):
