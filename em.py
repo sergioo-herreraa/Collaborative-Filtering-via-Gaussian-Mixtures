@@ -4,6 +4,7 @@ import numpy as np
 from scipy.special import logsumexp
 from common import GaussianMixture
 from scipy.stats import multivariate_normal
+from scipy.special import logsumexp
 
 def observed_values_Cu(X, u, j, mixture):
     x = X[u, :]                        
@@ -24,8 +25,8 @@ def f_u_j(X, u, j, mixture):
 
 def log_pj_given_u(X, u, j, mixture):
   K = len(mixture.var)
-  sum_exp = np.sum([np.exp(f_u_j(X, u, i, mixture)) for i in range(K)])
-  return f_u_j(X, u, j, mixture)-np.log(sum_exp)
+  f_array = [f_u_j(X, u, i, mixture) for i in range(K)]
+  return f_u_j(X, u, j, mixture)-logsumexp(f_array)
 
 def estep(X: np.ndarray, mixture: GaussianMixture) -> Tuple[np.ndarray, float]:
     """E-step: Softly assigns each datapoint to a gaussian component
@@ -44,14 +45,14 @@ def estep(X: np.ndarray, mixture: GaussianMixture) -> Tuple[np.ndarray, float]:
     K = len(mixture.var)
     p = np.zeros((n, K))
     log_likelihood_n=0
-
+    f_array=[]
     for u in range(n):
         log_likelihood_k= 0
         for j in range(K):
             p[u, j] = log_pj_given_u(X, u, j, mixture)
-            log_likelihood_k += np.exp(f_u_j(X, u, j, mixture))
+            f_array.append(f_u_j(X, u, j, mixture))
 
-        log_likelihood_n += np.log(log_likelihood_k)
+        log_likelihood_n += logsumexp(f_array)
 
     return np.exp(p), log_likelihood_n
     
