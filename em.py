@@ -20,7 +20,7 @@ def observed_values_Cu(X, u, j, mixture):
 def f_u_j(X, u, j, mixture):
   Cu, x_cu, miu_cu, var_cu = observed_values_Cu(X, u, j, mixture)
   gaussian = multivariate_normal.pdf(x_cu, miu_cu, var_cu)
-  return np.log(mixture.p[j])+np.log(gaussian)
+  return np.log(mixture.p[j]+1e-16)+np.log(gaussian)
 
 def log_pj_given_u(X, u, j, mixture):
   K = len(mixture.var)
