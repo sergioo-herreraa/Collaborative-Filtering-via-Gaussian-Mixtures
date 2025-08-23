@@ -81,25 +81,27 @@ def mstep(X: np.ndarray, post: np.ndarray, mixture: GaussianMixture,
         for l in range(d):
             num_mu = 0
             denom_mu= 0
-            num_var = 0
-            denom_var = 0
             p_index = 0
             for u in range(n):
               Cu, x_cu, miu_cu, var_cu = observed_values_Cu(X, u, k, mixture)
               num_mu += post[u, k]*Cu[l]*X[u,l]
               denom_mu += post[u, k]*Cu[l]
               p_index+=post[u, k]
-
             if denom_mu >=1:
                 miu[k,l] = num_mu/denom_mu
         
-        mask = Cu != 0    
-        num_var = np.sum(post[:, k]*np.linalg.norm(x_cu-miu[k, :][mask])**2)
-        denom_var = np.sum(post[:, k]*len(x_cu))
-        var[k] = max(num_var/denom_var, 0.25)
-
         p[k] = p_index/n
 
+    for k in range(K):
+        num_var=0
+        denom_var=0
+        for u in range(n): 
+            Cu, x_cu, miu_cu, var_cu = observed_values_Cu(X, u, k, mixture)
+            mask = Cu != 0    
+            num_var += post[u, k]*np.linalg.norm(x_cu-miu[k, :][mask])**2
+            denom_var += post[u, k]*len(x_cu)
+            
+        var[k] = max(num_var/denom_var, 0.25)
     return GaussianMixture(miu, var, p)
     
           
