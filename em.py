@@ -49,7 +49,7 @@ def estep(X: np.ndarray, mixture: GaussianMixture) -> Tuple[np.ndarray, float]:
         log_likelihood_k= 0
         for j in range(K):
             p[u, j] = log_pj_given_u(X, u, j, mixture)
-            log_likelihood_k += exp(f_u_j(X, u, j, mixture))
+            log_likelihood_k += np.exp(f_u_j(X, u, j, mixture))
 
         log_likelihood_n += np.log(log_likelihood_k)
 
