@@ -20,13 +20,13 @@ def observed_values_Cu(X, u, j, mixture):
 
 def f_u_j(X, u, j, mixture):
   Cu, x_cu, miu_cu, var_cu = observed_values_Cu(X, u, j, mixture)
-  log_gaussian = multivariate_normal.logpdf(x_cu, miu_cu, var_cu)
-  return np.log(mixture.p[j]+1e-16)+log_gaussian
+  gaussian = multivariate_normal.pdf(x_cu, miu_cu, var_cu)
+  return np.log(mixture.p[j]+1e-16)+np.log(gaussian)
 
 def log_pj_given_u(X, u, j, mixture):
   K = len(mixture.var)
-  f_array = [f_u_j(X, u, i, mixture) for i in range(K)]
-  return f_u_j(X, u, j, mixture)-logsumexp(f_array)
+  sum_exp = np.sum([np.exp(f_u_j(X, u, i, mixture)) for i in range(K)])
+  return f_u_j(X, u, j, mixture)-np.log(sum_exp)
 
 def estep(X: np.ndarray, mixture: GaussianMixture) -> Tuple[np.ndarray, float]:
     """E-step: Softly assigns each datapoint to a gaussian component
@@ -45,14 +45,13 @@ def estep(X: np.ndarray, mixture: GaussianMixture) -> Tuple[np.ndarray, float]:
     K = len(mixture.var)
     p = np.zeros((n, K))
     log_likelihood_n=0
-    f_array=[]
     for u in range(n):
         log_likelihood_k= 0
         for j in range(K):
             p[u, j] = log_pj_given_u(X, u, j, mixture)
-            f_array.append(f_u_j(X, u, j, mixture))
+            log_likelihood_k += np.exp(f_u_j(X, u, j, mixture))
 
-        log_likelihood_n += logsumexp(f_array)
+        log_likelihood_n += np.log(log_likelihood_k)
 
     return np.exp(p), log_likelihood_n
     
